@@ -22,32 +22,38 @@ connection.commit()
 def generate_short_code(length=6):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
-# Home page
 @app.route('/', methods=['GET', 'POST'])
 def home():
     if request.method == 'POST':
-        long_url = request.form['long_url'].strip()
+        action = request.form.get('action')
 
-        # Ensure URL has http/https
-        if not (long_url.startswith('http://') or long_url.startswith('https://')):
-            long_url = 'http://' + long_url
+        if action == 'Clear':
+            # Clear short URL display and form input
+            return render_template('Index.html', short_url=None)
 
-        short_code = generate_short_code()
+        if action == 'Cut':
+            long_url = request.form['long_url'].strip()
 
-        try:
-            c.execute('INSERT INTO urls (short_code, long_url) VALUES (?, ?)', (short_code, long_url))
-            connection.commit()
-        except sqlite3.IntegrityError:
-            short_code = generate_short_code()
-            c.execute('INSERT INTO urls (short_code, long_url) VALUES (?, ?)', (short_code, long_url))
-            connection.commit()
+            # Ensure URL has http/https
+            if not (long_url.startswith('http://') or long_url.startswith('https://')):
+                long_url = 'http://' + long_url
 
-        short_url = request.host_url + short_code
-        return render_template('Index.html', short_url=short_url)
+            # Generate unique short_code
+            while True:
+                short_code = generate_short_code()
+                try:
+                    c.execute('INSERT INTO urls (short_code, long_url) VALUES (?, ?)', (short_code, long_url))
+                    connection.commit()
+                    break
+                except sqlite3.IntegrityError:
+                    continue
 
+            short_url = request.host_url + short_code
+            return render_template('Index.html', short_url=short_url)
+
+    # GET request
     return render_template('Index.html', short_url=None)
 
-# Redirect handler
 @app.route('/<short_code>')
 def redirect_to_url(short_code):
     row = c.execute("SELECT long_url FROM urls WHERE short_code=?", (short_code,)).fetchone()

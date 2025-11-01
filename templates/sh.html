@@ -267,7 +267,7 @@
 
     <form method="post">
         <label for="long_url">URL</label>
-        <input type="url" id="long_url" name="long_url" placeholder="Enter your link here" value="{{ request.form.get('long_url', '') if short_url else '' }}" required />
+        <input type="url" id="long_url" name="long_url" placeholder="Enter your link here" required />
         <div class="form-buttons">
             <input type="submit" name="action" value="Cut" />
             <input type="submit" name="action" value="Clear" />
